@@ -2,6 +2,10 @@
 
 module Facter
   class InternalFactManager
+    def initialize
+      @log = Log.new(self)
+    end
+
     def resolve_facts(searched_facts)
       searched_facts = filter_internal_facts(searched_facts)
 
@@ -23,6 +27,10 @@ module Facter
         threads << Thread.new do
           fact = CoreFact.new(searched_fact)
           fact.create
+        rescue StandardError => e
+          @log.error("Error while resolving fact: #{searched_fact.name}, #{e.backtrace}")
+
+          nil
         end
       end
 
@@ -34,7 +42,7 @@ module Facter
 
       threads.each do |thread|
         thread.join
-        resolved_facts << thread.value
+        resolved_facts << thread.value if thread.value
       end
 
       resolved_facts.flatten!
