@@ -22,7 +22,7 @@ module Facter
     private
 
     def load_all_oses(os_descendents)
-      os_descendents.each do |os|
+      os_descendents.reverse.each do |os|
         load_for_os(os)
       end
     end
@@ -34,6 +34,7 @@ module Facter
       classes.each do |class_name|
         fact_name = class_name::FACT_NAME
 
+        next if @facts.select{ |fact| fact.name == fact_name}.any?
         load_fact(fact_name, class_name)
         next unless class_name.const_defined?('ALIASES')
 
