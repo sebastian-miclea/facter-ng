@@ -28,8 +28,7 @@ module Facter
 
     def load_block_groups
       @block_groups = File.readable?(@block_groups_file_path) ? Hocon.load(@block_groups_file_path) : {}
-      options = Options.instance
-      @block_list = ConfigReader.new(options[:config]).block_list || {}
+      @block_list = ConfigReader.new(Options[:config]).block_list || {}
     end
   end
 end

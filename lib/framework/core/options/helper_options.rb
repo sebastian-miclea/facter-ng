@@ -2,9 +2,9 @@
 
 module Facter
   module HelperOptions
-    def augment_with_helper_options!(user_query)
-      @options[:user_query] = true if user_query.any?
+    private
 
+    def augment_with_helper_options!
       no_ruby
 
       # convert array or string to array
@@ -14,18 +14,26 @@ module Facter
       @options[:debug] = true if @options[:log_level] == :debug
 
       validate_log_level
+      external_facts
+      custom_facts
 
       Log.level = @options[:log_level]
       Facter.trace(@options[:trace])
     end
-
-    private
 
     def no_ruby
       return if @options[:ruby]
 
       @options[:custom_facts] = false
       @options[:blocked_facts] = ['ruby'].concat(@options[:blocked_facts] || [])
+    end
+
+    def external_facts
+      @options[:external_facts] = true if @options[:external_dir].any?
+    end
+
+    def custom_facts
+      @options[:ruby] = @options[:custom_facts] = true if @options[:custom_dir].any?
     end
 
     def log_level

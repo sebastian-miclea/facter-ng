@@ -1,35 +1,33 @@
 # frozen_string_literal: true
 
 module Facter
-  class Options
-    include Facter::DefaultOptions
-    include Facter::ConfigFileOptions
-    include Facter::PriorityOptions
-    include Facter::HelperOptions
-    include Facter::ValidateOptions
+  module Options
+    extend Facter::DefaultOptions
+    extend Facter::ConfigFileOptions
+    extend Facter::HelperOptions
 
-    include Singleton
+    attr_writer :options
+    attr_reader :config, :user_query
 
-    attr_accessor :priority_options
+    @options = {}
+    augment_with_defaults!
 
-    def initialize
-      @options = {}
-      @priority_options = {}
-    end
+    module_function
 
-    def refresh(user_query = [])
-      @user_query = user_query
-      initialize_options
-
-      @options
+    def cli?
+      @options[:cli]
     end
 
     def get
       @options
     end
 
-    def [](option)
-      @options.fetch(option, nil)
+    def [](key)
+      @options.fetch(key, nil)
+    end
+
+    def []=(key, value)
+      @options[key.to_sym] = value
     end
 
     def custom_dir?
@@ -48,24 +46,31 @@ module Facter
       @options[:external_dir]
     end
 
-    def self.method_missing(name, *args, &block)
-      Facter::Options.instance.send(name.to_s, *args, &block)
-    rescue NoMethodError
-      super
+    def init_from_api
+      @options[:cli] = false
+      @options[:show_legacy] = true
+      send(:augment_with_config_file_options!)
     end
 
-    def self.respond_to_missing?(name, include_private) end
+    def init_from_cli(cli_options = {}, user_query = nil)
+      @options[:cli] = true
+      @options[:show_legacy] = false
 
-    private
+      send(:augment_with_config_file_options!, cli_options[:config])
+      @options[:user_query] = user_query
 
-    def initialize_options
-      @options = { config: @priority_options[:config] }
+      cli_options.each do |key, val|
+        @options[key.to_sym] = val
+        @options[key.to_sym] = '' if key == 'log_level' && val == 'log_level'
+      end
+      Facter::OptionsValidator.validate_configs(@options)
+
+      send(:augment_with_helper_options!)
+    end
+
+    def reset!
+      @options = {}
       augment_with_defaults!
-      augment_with_to_hash_defaults! if @priority_options[:to_hash]
-      augment_with_config_file_options!(@options[:config])
-      augment_with_priority_options!(@priority_options)
-      validate_configs
-      augment_with_helper_options!(@user_query)
     end
   end
 end
