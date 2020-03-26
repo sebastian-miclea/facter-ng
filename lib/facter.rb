@@ -10,7 +10,7 @@ require "#{ROOT_DIR}/lib/framework/core/options/options_validator"
 module Facter
   class ResolveCustomFactError < StandardError; end
 
-  @options = Options.instance
+  Options.initialize_options
   Log.add_legacy_logger(STDOUT)
   @logger = Log.new(self)
   @already_searched = {}
@@ -101,8 +101,7 @@ module Facter
     #
     # @api public
     def debugging(debug_bool)
-      @options.priority_options[:debug] = debug_bool
-      @options.refresh
+      Options.priority_options[:debug] = debug_bool
 
       debug_bool
     end
@@ -185,9 +184,6 @@ module Facter
     #
     # @api public
     def to_hash
-      @options.priority_options[:to_hash] = true
-      @options.refresh
-
       log_blocked_facts
 
       resolved_facts = Facter::FactManager.instance.resolve_facts
@@ -242,14 +238,15 @@ module Facter
     #
     # @api private
     def to_user_output(cli_options, *args)
-      @options.priority_options = { is_cli: true }.merge!(cli_options.map { |(k, v)| [k.to_sym, v] }.to_h)
-      @options.refresh(args)
+      # Options.priority_options =
+      cli_options.map! { |(k, v)| [k.to_sym, v] }.to_h
+      Options.initialize_options_from_cli(cli_options)
+      Options.user_query = args
       @logger.info("executed with command line: #{ARGV.drop(1).join(' ')}")
       log_blocked_facts
-
       resolved_facts = Facter::FactManager.instance.resolve_facts(args)
       CacheManager.invalidate_all_caches
-      fact_formatter = Facter::FormatterFactory.build(@options)
+      fact_formatter = Facter::FormatterFactory.build(Options.get)
 
       status = error_check(args, resolved_facts)
 
@@ -268,7 +265,7 @@ module Facter
     #
     # @return [ResolvedFact]
     def resolve_fact(user_query)
-      @options.refresh([user_query])
+      # Options.refresh([user_query])
       user_query = user_query.to_s
       resolved_facts = Facter::FactManager.instance.resolve_facts([user_query])
       CacheManager.invalidate_all_caches
@@ -294,7 +291,7 @@ module Facter
     #
     # @api private
     def error_check(args, resolved_facts)
-      if Options.instance[:strict]
+      if Options[:strict]
         missing_names = args - resolved_facts.map(&:user_query).uniq
         if missing_names.count.positive?
           status = 1
