@@ -3,10 +3,6 @@
 describe Facter::Options do
   let(:options) { Facter::Options.get }
 
-  after do
-    Facter::Options.reset!
-  end
-
   describe '#augment_with_defaults!' do
     before do
       Facter::Options.augment_with_defaults!
@@ -81,8 +77,8 @@ describe Facter::Options do
         expect(Facter::Options[:verbose]).to be_truthy
       end
 
-      it 'sets logs level to error' do
-        expect(Facter::Options[:log_level]).to eq(:warn)
+      it 'sets logs level to debug' do
+        expect(Facter::Options[:log_level]).to eq(:debug)
       end
 
       it 'sets custom-facts to true' do
@@ -248,7 +244,7 @@ describe Facter::Options do
 
     before do
       allow(Facter::ConfigReader).to receive(:new).and_return(config_reader_double)
-      allow(config_reader_double).to receive(:cli).and_return('log-level' => :err)
+      allow(config_reader_double).to receive(:cli).and_return('log-level' => :error)
       allow(config_reader_double).to receive(:global).and_return(
         'no-custom-facts' => true, 'no-external-facts' => true, 'no-ruby' => true
       )
@@ -257,7 +253,7 @@ describe Facter::Options do
 
       allow(Facter::BlockList).to receive(:instance).and_return(block_list_double)
       allow(block_list_double).to receive(:blocked_facts).and_return(%w[block_fact1 blocked_fact2])
-      Facter::Options.init_from_api
+      Facter::Options.init_from_cli(config: 'config_path')
     end
 
     it 'sets debug to true' do
@@ -273,7 +269,7 @@ describe Facter::Options do
     end
 
     it 'sets logs level to error' do
-      expect(Facter::Options[:log_level]).to eq(:err)
+      expect(Facter::Options[:log_level]).to eq(:error)
     end
   end
 
@@ -294,8 +290,7 @@ describe Facter::Options do
 
       allow(Facter::BlockList).to receive(:instance).and_return(block_list_double)
       allow(block_list_double).to receive(:blocked_facts).and_return(%w[block_fact1 blocked_fact2])
-      allow(Facter::OptionsValidator).to receive(:write_error_and_exit)
-        .with('options conflict: please specify only one').and_raise(SystemExit)
+      allow(Facter::OptionsValidator).to receive(:write_error_and_exit).and_raise(SystemExit)
       allow(Facter::Log).to receive(:new).and_return(log)
 
       allow(log).to receive(:error).with(

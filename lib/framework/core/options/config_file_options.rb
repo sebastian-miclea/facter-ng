@@ -5,8 +5,6 @@ module Facter
     private
 
     def augment_with_config_file_options!(config_path = nil)
-      # config_path = @options[:cofig]
-      # config_path = '/Users/sebastian.miclea/projects/ghost/facter.conf'
       conf_reader = Facter::ConfigReader.new(config_path)
 
       augment_config_path(config_path)
@@ -41,6 +39,7 @@ module Facter
 
       if @options[:cli]
         @options[:custom_facts] = !file_global_conf['no-custom-facts'] unless file_global_conf['no-custom-facts'].nil?
+        @options[:ruby] = @options[:custom_facts]
       end
       @options[:custom_dir] = [file_global_conf['custom-dir']].flatten unless file_global_conf['custom-dir'].nil?
     end
