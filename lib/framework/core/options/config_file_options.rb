@@ -2,8 +2,6 @@
 
 module Facter
   module ConfigFileOptions
-    private
-
     def augment_with_config_file_options!(config_path = nil)
       conf_reader = Facter::ConfigReader.new(config_path)
 
@@ -18,8 +16,12 @@ module Facter
       augment_show_legacy(conf_reader.global)
       augment_facts(conf_reader.ttls)
 
-      Facter::OptionsValidator.validate_configs(@options) unless @options[:cli].nil?
+      # Facter::OptionsValidator.validate_configs(@options) unless @options[:cli].nil?
     end
+
+    private
+
+
 
     def augment_config_path(config_path)
       @options[:config] = config_path

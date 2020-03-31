@@ -11,6 +11,8 @@ module Facter
 
     @options = {}
     augment_with_defaults!
+    augment_with_config_file_options!
+    augment_with_helper_options!
 
     module_function
 
