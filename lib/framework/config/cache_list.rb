@@ -20,7 +20,7 @@ module Facter
     def get_group_ttls(group_name)
       return unless (ttls = @groups_ttls.find { |g| g[group_name] })
 
-      ttls[group_name]
+      ttls_to_seconds(ttls[group_name])
     end
 
     private
@@ -29,6 +29,21 @@ module Facter
       @cache_groups = Facter::GroupList.instance.groups
       options = Options.instance
       @groups_ttls = ConfigReader.new(options[:config]).ttls || {}
+    end
+
+    def ttls_to_seconds(ttls)
+      duration, unit = ttls.split(' ', 2)
+      time = duration.to_i
+      case unit
+      when 'seconds'
+        return time
+      when 'minutes'
+        return time * 60
+      when 'hours'
+        return time * 60 * 60
+      when 'days'
+        return time * 60 * 60 * 24
+      end
     end
   end
 end

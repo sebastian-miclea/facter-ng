@@ -28,19 +28,30 @@ describe Facter::FactManager do
 
       resolved_fact = mock_resolved_fact('os', 'Ubuntu', '', [])
 
+      seached_facts = [searched_fact1, searched_fact2]
+
       allow(Facter::QueryParser)
         .to receive(:parse)
         .with(user_query, loaded_facts)
-        .and_return([searched_fact1, searched_fact2])
+        .and_return(seached_facts)
 
       allow(internal_manager)
         .to receive(:resolve_facts)
-        .with([searched_fact1, searched_fact2])
+        .with(seached_facts)
         .and_return([resolved_fact])
 
       allow(external_manager)
         .to receive(:resolve_facts)
-        .with([searched_fact1, searched_fact2])
+        .with(seached_facts)
+
+      allow(Facter::CacheManager)
+        .to receive(:resolve_facts)
+        .with(seached_facts)
+        .and_return([seached_facts, []])
+
+      allow(Facter::CacheManager)
+        .to receive(:cache_facts)
+        .with([resolved_fact])
 
       resolved_facts = Facter::FactManager.instance.resolve_facts(user_query)
 
