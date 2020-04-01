@@ -36,6 +36,10 @@ module LegacyFacter
         @external_facts_dirs
       end
 
+      def self.facts_cache_dir
+        @facts_cache_dir
+      end
+
       def self.setup_default_ext_facts_dirs
         if LegacyFacter::Util::Root.root?
           windows_dir = windows_data_dir
