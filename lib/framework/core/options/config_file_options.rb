@@ -11,20 +11,19 @@ module Facter
     end
 
     def init(config_path = nil)
-      @cli = true if config_path
       @options = {}
       conf_reader ||= Facter::ConfigReader.new(config_path)
 
       augment_config_path(config_path)
 
-      if @cli
+      if Options.cli?
         augment_cli(conf_reader.cli)
         augment_ruby(conf_reader.global)
       end
       augment_custom(conf_reader.global)
       augment_external(conf_reader.global)
       augment_show_legacy(conf_reader.global)
-      augment_facts(conf_reader.ttls)
+      augment_facts(conf_reader.ttls, config_path)
     end
 
     private
@@ -45,7 +44,7 @@ module Facter
     def augment_custom(file_global_conf)
       return unless file_global_conf
 
-      if @cli
+      if Options.cli?
         @options[:custom_facts] = !file_global_conf['no-custom-facts'] unless file_global_conf['no-custom-facts'].nil?
       end
 
@@ -55,7 +54,7 @@ module Facter
     def augment_external(global_conf)
       return unless global_conf
 
-      if @cli
+      if Options.cli?
         @options[:external_facts] = !global_conf['no-external-facts'] unless global_conf['no-external-facts'].nil?
       end
 
@@ -74,8 +73,8 @@ module Facter
       @options[:show_legacy] = global_conf['show-legacy'] unless global_conf['show-legacy'].nil?
     end
 
-    def augment_facts(ttls)
-      blocked_facts = Facter::BlockList.instance.blocked_facts
+    def augment_facts(ttls, config_path)
+      blocked_facts = Facter::BlockList.new(config_path).blocked_facts
       @options[:blocked_facts] = blocked_facts unless blocked_facts.nil?
 
       @options[:ttls] = ttls unless ttls.nil?

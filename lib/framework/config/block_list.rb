@@ -2,8 +2,6 @@
 
 module Facter
   class BlockList
-    include Singleton
-
     attr_reader :block_groups, :block_list
 
     def initialize(block_list_path = nil)

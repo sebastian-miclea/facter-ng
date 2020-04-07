@@ -2,20 +2,21 @@
 
 module Facter
   module OptionStore
-    DEFAULT_LOG_LEVEL = :warn
 
     extend self
 
-    attr :debug, :trace, :verbose, :log_level, :show_legacy,
-         :block, :custom_dir, :external_dir, :external_facts, :ruby, :cli,
-         :custom_facts, :ttls
-    attr_accessor :config, :user_query, :blocked_facts, :strict
+    attr_reader :debug, :verbose, :log_level, :show_legacy, :trace,
+                :custom_dir, :external_dir, :external_facts, :ruby, :cli,
+         :custom_facts
+    attr_accessor :config, :user_query, :blocked_facts, :strict, :json, :haml,
+                  :cache, :yaml, :puppet, :ttls, :external_facts, :block
 
     # default options
     @debug = false
     @trace = false
     @verbose = false
-    @log_level = DEFAULT_LOG_LEVEL
+    #TODO: constant is not yet available when running puppet facts
+    @log_level = :warn
     @show_legacy = true
     @block = true
     @custom_dir = []
@@ -29,6 +30,7 @@ module Facter
       if bool == true
         @ruby = true
       else
+        @ruby = false
         @custom_facts = false
         @blocked_facts << 'ruby'
       end
@@ -37,25 +39,28 @@ module Facter
     def external_dir=(dirs)
       return unless dirs.any?
 
-      @external_facts = true
       @external_dir = dirs
+    end
+
+    def blocked_facts=(*facts)
+      @blocked_facts = @blocked_facts + [*facts]
+
+      @blocked_facts.flatten!
     end
 
     def custom_dir=(*dirs)
       return unless dirs.any?
 
-      @custom_facts = true
       @ruby = true
       @custom_dir = [*dirs]
     end
 
     def debug=(bool)
       if bool == true
-        @debug = true
         self.log_level = :debug
       else
         @debug = false
-        self.log_level = DEFAULT_LOG_LEVEL
+        self.log_level = Facter::DEFAULT_LOG_LEVEL
       end
     end
 
@@ -65,11 +70,21 @@ module Facter
         self.log_level = :info
       else
         @verbose = false
-        self.log_level = DEFAULT_LOG_LEVEL
+        self.log_level = Facter::DEFAULT_LOG_LEVEL
+      end
+    end
+
+    def custom_facts=(bool)
+      if bool == true
+        @custom_facts = true
+        @ruby = true
+      else
+        @custom_facts = false
       end
     end
 
     def log_level=(level)
+      level = level.to_sym
       case level
       when :trace
         @log_level = :debug
@@ -91,7 +106,16 @@ module Facter
         @ruby = true
       else
         @show_legacy = false
-        @ruby = Facter::OptionDefaults.ruby
+      end
+    end
+
+    def trace=(bool)
+      if bool == true
+        self.log_level = :trace
+      else
+        @log_level = Facter::DEFAULT_LOG_LEVEL
+        @trace = false
+        Facter.trace(false)
       end
     end
 

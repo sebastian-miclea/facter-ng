@@ -244,8 +244,7 @@ module Facter
     # @api private
     def to_user_output(cli_options, *args)
       cli_options = cli_options.map { |(k, v)| [k.to_sym, v] }.to_h
-      Options[:user_query] = args
-      Options.init_from_cli(cli_options)
+      Options.init_from_cli(cli_options, args)
       @logger.info("executed with command line: #{ARGV.drop(1).join(' ')}")
       log_blocked_facts
 
@@ -329,7 +328,7 @@ module Facter
     #
     # @api private
     def log_blocked_facts
-      block_list = BlockList.instance.block_list
+      block_list = BlockList.new(Options[:config]).block_list
       @logger.debug("blocking collection of #{block_list.join("\s")} facts") if block_list.any? && Options[:block]
     end
 
