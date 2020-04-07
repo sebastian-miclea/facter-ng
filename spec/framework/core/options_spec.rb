@@ -19,7 +19,7 @@ describe Facter::Options do
     end
 
     it 'sets show_legacy to false' do
-      expect(Facter::Options[:show_legacy]).to be_falsey
+      expect(Facter::Options[:show_legacy]).to be_truthy
     end
 
     it 'set custom-dir with empty array' do

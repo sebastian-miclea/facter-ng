@@ -11,6 +11,7 @@ require "#{ROOT_DIR}/lib/framework/core/options/options_validator"
 module Facter
   class ResolveCustomFactError < StandardError; end
 
+  Options.init_from_api
   Log.add_legacy_logger(STDOUT)
   @logger = Log.new(self)
   @already_searched = {}
@@ -187,7 +188,7 @@ module Facter
     def to_hash
       log_blocked_facts
 
-      Options.init_from_api
+      # Options.init_from_api
       reset
       resolved_facts = Facter::FactManager.instance.resolve_facts
       SessionCache.invalidate_all_caches

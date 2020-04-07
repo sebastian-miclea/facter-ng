@@ -29,20 +29,20 @@ module Facter
     end
 
     def external_facts
-      @options[:external_facts] = true if @options[:external_dir].any?
+      # @options[:external_facts] = true if @options[:external_dir].any?
     end
 
     def custom_facts
-      @options[:ruby] = @options[:custom_facts] = true if @options[:custom_dir].any?
+      # @options[:ruby] = @options[:custom_facts] = true if @options[:custom_dir].any?
     end
 
-    def log_level
-      if @options[:debug] || @options[:log_level] == :trace
-        :debug
-      elsif @options[:verbose]
-        :info
-      end
-    end
+    # def log_level
+    #   if @options[:debug] || @options[:log_level] == :trace
+    #     :debug
+    #   elsif @options[:verbose]
+    #     :info
+    #   end
+    # end
 
     def validate_log_level
       if @options[:log_level].empty?

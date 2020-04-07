@@ -5,18 +5,18 @@ module Facter
     private
 
     def augment_with_config_file_options!(config_path = nil)
-      conf_reader = Facter::ConfigReader.new(config_path)
+      @conf_reader ||= Facter::ConfigReader.new(config_path)
 
       augment_config_path(config_path)
 
       if @options[:cli]
-        augment_cli(conf_reader.cli)
-        augment_ruby(conf_reader.global)
+        augment_cli(@conf_reader.cli)
+        augment_ruby(@conf_reader.global)
       end
-      augment_custom(conf_reader.global)
-      augment_external(conf_reader.global)
-      augment_show_legacy(conf_reader.global)
-      augment_facts(conf_reader.ttls)
+      augment_custom(@conf_reader.global)
+      augment_external(@conf_reader.global)
+      augment_show_legacy(@conf_reader.global)
+      augment_facts(@conf_reader.ttls)
     end
 
     def augment_config_path(config_path)

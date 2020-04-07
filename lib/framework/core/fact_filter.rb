@@ -6,7 +6,6 @@ module Facter
   # and major is the filter criteria inside tha fact
   class FactFilter
     def filter_facts!(searched_facts)
-      filter_legacy_facts!(searched_facts)
       searched_facts.each do |fact|
         fact.value = if fact.filter_tokens.any? && fact.value.respond_to?(:dig)
                        fact.value.dig(*fact.filter_tokens)
@@ -14,14 +13,6 @@ module Facter
                        fact.value
                      end
       end
-    end
-
-    private
-
-    def filter_legacy_facts!(resolved_facts)
-      return if Options[:show_legacy]
-
-      resolved_facts.reject!(&:legacy?) unless Options[:user_query]
     end
   end
 end

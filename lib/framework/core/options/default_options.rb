@@ -7,7 +7,6 @@ module Facter
       global_defaults
     end
 
-    DEFAULT_LOG_LEVEL = :warn
 
     private
 
@@ -16,7 +15,7 @@ module Facter
       @options[:trace] = false
       @options[:verbose] = false
       @options[:log_level] = DEFAULT_LOG_LEVEL
-      @options[:show_legacy] = false
+      @options[:show_legacy] = true
     end
 
     def global_defaults
