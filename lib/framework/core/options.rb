@@ -2,71 +2,70 @@
 
 module Facter
   module Options
-    extend Facter::ConfigFileOptions
-    extend Facter::HelperOptions
     extend Facter::OptionStore
-
-    @options = {}
 
     extend self
 
     def cli?
-      @options[:cli]
+      OptionStore.cli
     end
 
     def get
-      @options
+      options = {}
+      OptionStore.instance_variables.each do |iv|
+        variable_name = iv.to_s.delete('@')
+        options[variable_name.to_sym] = OptionStore.send(variable_name.to_sym)
+      end
+      options
     end
 
     def [](key)
-      # OptionStore(key, nil)
+      OptionStore.send(key.to_sym)
     end
 
     def []=(key, value)
-      @options[key.to_sym] = value
+      OptionStore.send("#{key}=".to_sym, value)
     end
 
     def custom_dir?
-      @options[:custom_dir] && @options[:custom_facts]
+      OptionStore.custom_dir && OptionStore.custom_facts
     end
 
     def custom_dir
-      @options[:custom_dir]
+      OptionStore.custom_dir.flatten
     end
 
     def external_dir?
-      @options[:external_dir] && @options[:external_facts]
+      OptionStore.external_dir && OptionStore.external_facts
     end
 
     def external_dir
-      @options[:external_dir]
+      OptionStore.external_dir
     end
 
-    def init_from_api
-      @options[:cli] = false
-      send(:augment_with_config_file_options!)
+    def init
+      OptionStore.cli = false
+      store(ConfigFileOptions.get)
     end
 
     def init_from_cli(cli_options = {}, user_query = nil)
       OptionStore.cli = true
       OptionStore.show_legacy = true
 
-      send(:augment_with_config_file_options!, cli_options[:config])
-      @options[:user_query] = user_query
+      OptionStore.user_query = user_query
 
-      cli_options.each do |key, val|
+      ConfigFileOptions.init(cli_options[:config])
+      store(ConfigFileOptions.get)
+      store(cli_options)
+
+      Facter::OptionsValidator.validate_configs(get)
+    end
+
+    def store(options)
+      options.each do |key, val|
         val = '' if key == 'log_level' && val == 'log_level'
         OptionStore.send("#{key}=".to_sym, val)
       end
-
-      Facter::OptionsValidator.validate_configs(@options)
-
-      send(:augment_with_helper_options!)
-    end
-
-    def reset!
-      @options = {}
-      augment_with_defaults!
     end
   end
 end

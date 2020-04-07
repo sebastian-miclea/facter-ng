@@ -7,8 +7,9 @@ module Facter
     extend self
 
     attr :debug, :trace, :verbose, :log_level, :show_legacy,
-         :block, :custom_dir, :external_dir, :ruby, :cli,
-         :custom_facts, :blocked_facts, :ttls
+         :block, :custom_dir, :external_dir, :external_facts, :ruby, :cli,
+         :custom_facts, :ttls
+    attr_accessor :config, :user_query, :blocked_facts, :strict
 
     # default options
     @debug = false
@@ -23,10 +24,6 @@ module Facter
     @external_facts = true
     @ruby = true
     @blocked_facts = []
-
-    def ruby
-      @ruby
-    end
 
     def ruby=(bool)
       if bool == true
@@ -49,7 +46,7 @@ module Facter
 
       @custom_facts = true
       @ruby = true
-      @custom_dir = dirs
+      @custom_dir = [*dirs]
     end
 
     def debug=(bool)
@@ -100,18 +97,6 @@ module Facter
 
     def cli=(bool)
       @cli = bool
-    end
-
-    def method_missing(method_name, *args, _block)
-      property_name = method_name.to_s.delete('=')
-      Facter::OptionStore.class_eval do
-        attr_accessor property_name
-        send("#{method_name}", *args)
-      end
-    end
-
-    def respond_to_missing?
-      true
     end
   end
 end

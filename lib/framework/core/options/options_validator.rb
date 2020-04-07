@@ -69,7 +69,7 @@ module Facter
     def self.validate_log_options(options)
       return unless [options[:debug],
                      options[:verbose],
-                     options[:log_level] != Facter::DefaultOptions::DEFAULT_LOG_LEVEL]
+                     options[:log_level] != Facter::OptionStore::DEFAULT_LOG_LEVEL]
                     .count(true) > 1
 
       message = 'debug, verbose, and log-level options conflict: please specify only one.'
