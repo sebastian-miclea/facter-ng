@@ -1,5 +1,5 @@
 require_relative 'ffi/ffi.rb'
-
+require 'pry'
 module Facter
   module Resolvers
     module Solaris
@@ -59,6 +59,7 @@ module Facter
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:buf] + pad)
               interface_names << lifreq[:name].to_s
             end
+	    interface_names
           end
         end
       end
