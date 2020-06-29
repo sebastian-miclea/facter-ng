@@ -1,7 +1,6 @@
 module Facter
   module Resolvers
     module Solaris
-      module FFI
 
         class Sockaddr < FFI::Struct
           layout(
@@ -52,7 +51,6 @@ module Facter
           layout :lifcu_buf, :caddr_t,
             :lifreq, Lifreq
         end
-      end
     end
   end
 end

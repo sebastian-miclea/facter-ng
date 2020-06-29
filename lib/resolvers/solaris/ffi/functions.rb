@@ -1,7 +1,6 @@
 module Facter
   module Resolvers
     module Solaris
-      module FFI
         module Socket
           extend FFI::Library
           ffi_lib '/usr/lib/libsocket.so'
@@ -11,9 +10,8 @@ module Facter
         module Ioctl
           extend FFI::Library
           ffi_lib FFI::Library::LIBC
-          attach_function :ioctl, [:int, :int, Facter::Resolvers::Solaris::FFi::Lifnum], :int
+          attach_function :ioctl, [:int, :int, Facter::Resolvers::Solaris::Lifnum], :int
         end
       end
-    end
   end
 end
