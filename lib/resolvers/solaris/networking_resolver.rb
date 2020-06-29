@@ -3,7 +3,7 @@ require_relative 'ffi/ffi.rb'
 module Facter
   module Resolvers
     module Solaris
-      class Networking < BaseResolver
+      class Networking2 < BaseResolver
         @log = Facter::Log.new(self)
         @semaphore = Mutex.new
         @fact_list ||= {}
