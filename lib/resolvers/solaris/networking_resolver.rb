@@ -18,8 +18,30 @@ module Facter
             )
 
             interfaces = load_interfaces(socket)
+	    interfaces.each do |int, fam|
+	    	macadress = load_macaddress(int, fam)
+	    end
             p interfaces
           end
+
+	  def load_macaddress(interface, family)
+            socket = Socket::socket(
+              family[:fam],
+	      Facter::Resolvers::Solaris::SOCK_DGRAM,
+              0
+            )
+	        arp = Facter::Resolvers::Solaris::Arpreq.new
+
+		ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
+		7, 
+		Facter::Resolvers::Solaris::SIOCGARP,
+		arp)
+		binding.pry
+	    if ioctl == -1
+              @log.debug("Error! #{FFI::LastError.error}")
+            end
+
+	  end
 
           def count_interfaces(socket)
 
@@ -27,8 +49,7 @@ module Facter
             lifnum[:family] = Facter::Resolvers::Solaris::AF_UNSPEC
             lifnum[:flags] = 0
             lifnum[:count] = 0
-
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::SIOCGLIFNUM, lifnum)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifnum(socket, Facter::Resolvers::Solaris::SIOCGLIFNUM, lifnum)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
@@ -47,17 +68,17 @@ module Facter
 
             lifconf[:buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::Lifreq, interface_count)
 
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::SIOCGLIFCONF, lifconf)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifnum(socket, Facter::Resolvers::Solaris::SIOCGLIFCONF, lifconf)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
 
-            interface_names = []
+            interface_names = {}
             interface_count.times do |i|
               pad = i * Facter::Resolvers::Solaris::Lifreq.size
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:buf] + pad)
-              interface_names << lifreq[:name].to_s
+	      interface_names[lifreq[:name].to_s] = { fam: lifreq[:lifru][:staddr][:sa_family] }
             end
 	    interface_names
           end

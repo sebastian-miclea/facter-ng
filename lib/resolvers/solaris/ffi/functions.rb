@@ -10,8 +10,9 @@ module Facter
         module Ioctl
           extend FFI::Library
           ffi_lib FFI::Library::LIBC
-          attach_function :ioctl, [:int, :int, Facter::Resolvers::Solaris::Lifnum], :int
-        end
+          attach_function :ioctl_lifnum, :ioctl, [:int, :int, Facter::Resolvers::Solaris::Lifnum], :int
+          attach_function :ioctl_arpreq, :ioctl, [:int, :int, Facter::Resolvers::Solaris::Arpreq], :int        
+	end
       end
   end
 end
