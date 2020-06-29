@@ -28,7 +28,7 @@ end
 
 class Lifru < FFI::Union
 	layout :addr, :int,
-	#	:dstaddr, Sockaddr,
+	#	:staddr, Sockaddr,
 	#	:broad_addr, Sockaddr,
 	#	:token, Sockaddr,
 	#	:index, :int,
@@ -39,10 +39,8 @@ class Lifru < FFI::Union
 end
 
 class Lifreq < FFI::Struct
-	layout  :name, :pointer,
-		:lifru1, :int64,
-		:lifru, :int64
-
+	layout  :name, [:char, 32],
+		:pad, [:char, 344]
 end
 
 class Lifconf < FFI::Struct
@@ -82,22 +80,22 @@ x = Ioctl::ioctl(s, -1072928382, l)
 lifconf = Lifconf.new
 lifconf[:family] = 0
 lifconf[:flags] = 0
-lifconf[:len] = l[:count] * 12
-lifreq = FFI::MemoryPointer.new(Lifreq, 2)
+lifconf[:len] = l[:count] * 376
 
-#lifreq_vector = 2.times.collect do |i|
-#  Lifreq.new(lifreq + i * Lifreq.size)
-#end
-#binding.pry
-#lifconf[:buf] = lifreq_vector.first
-lifconf[:buf] = FFI::MemoryPointer.new(:char) # Oana added
+lifconf[:buf] = FFI::MemoryPointer.new(Lifreq, l[:count])
+
 x2 = Ioctl::ioctl(s, -1072666203, lifconf)
+
 p '------------'
 p x2
 #binding.pry
 p lifconf[:buf]
 lif = Lifreq.new(lifconf[:buf])
-p lif[:name].get_bytes(0, 32 * 2)
+lif2 = Lifreq.new(lifconf[:buf] + 376)
+lif3 = Lifreq.new(lifconf[:buf] + 376 + 376)
+lif4 = Lifreq.new(lifconf[:buf] + 376 + 376 + 376)
+binding.pry
+#p lif[:name].get_bytes(0, 32 * 2)
 
 
 p FFI::LastError.error
