@@ -12,8 +12,8 @@ module Facter
 
           def post_resolve(fact_name)
             socket = Socket::socket(
-              Facter::Resolvers::Solaris::FFI::AF_INET,
-              Facter::Resolvers::Solaris::FFI::SOCK_DGRAM,
+              Facter::Resolvers::Solaris::AF_INET,
+              Facter::Resolvers::Solaris::SOCK_DGRAM,
               0
             )
 
@@ -23,12 +23,12 @@ module Facter
 
           def count_interfaces(socket)
 
-            lifnum = Facter::Resolvers::Solaris::FFI::Lifnum.new
-            lifnum[:family] = Facter::Resolvers::Solaris::FFI::AF_UNSPEC
+            lifnum = Facter::Resolvers::Solaris::Lifnum.new
+            lifnum[:family] = Facter::Resolvers::Solaris::AF_UNSPEC
             lifnum[:flags] = 0
             lifnum[:count] = 0
 
-            ioctl = Facter::Resolvers::Solaris::FFI::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::FFI::SIOCGLIFNUM, lifnum)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::SIOCGLIFNUM, lifnum)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
@@ -40,14 +40,14 @@ module Facter
           def load_interfaces(socket)
             interface_count  = count_interfaces(socket)
 
-            lifconf = Facter::Resolvers::Solaris::FFI::Lifconf.new
+            lifconf = Facter::Resolvers::Solaris::Lifconf.new
             lifconf[:family] = 0
             lifconf[:flags] = 0
             lifconf[:len] = interface_count * 376 # lifreq struct size
 
-            lifconf[:buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::FFi::Lifreq, interface_count)
+            lifconf[:buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::Lifreq, interface_count)
 
-            ioctl = Facter::Resolvers::Solaris::FFI::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::FFI::SIOCGLIFCONF, lifconf)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::SIOCGLIFCONF, lifconf)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
@@ -55,8 +55,8 @@ module Facter
 
             interface_names = []
             interface_count.times do |i|
-              pad = i * Facter::Resolvers::Solaris::FFI::Lifreq.size
-              lifreq = Facter::Resolvers::Solaris::FFI::Lifreq.new(lifconf[:buf] + pad)
+              pad = i * Facter::Resolvers::Solaris::Lifreq.size
+              lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:buf] + pad)
               interface_names << lifreq[:name].to_s
             end
           end
