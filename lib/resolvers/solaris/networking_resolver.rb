@@ -18,28 +18,30 @@ module Facter
             )
 
             interfaces = load_interfaces(socket)
-	    interfaces.each do |int, fam|
-	    	macadress = load_macaddress(int, fam)
-	    end
+						#x = Socket::close(socket)
+						#p x
+						interfaces.each do |int, fam|
+	    				#macadress = load_macaddress(int, fam)
+	    			end
             p interfaces
           end
 
 	  def load_macaddress(interface, family)
             socket = Socket::socket(
-              family[:fam],
+              2,
 	      Facter::Resolvers::Solaris::SOCK_DGRAM,
               0
             )
 	        arp = Facter::Resolvers::Solaris::Arpreq.new
 
-		ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
-		7, 
-		Facter::Resolvers::Solaris::SIOCGARP,
-		arp)
-		binding.pry
-	    if ioctl == -1
-              @log.debug("Error! #{FFI::LastError.error}")
-            end
+					ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
+										7, 
+										Facter::Resolvers::Solaris::SIOCGARP,
+										arp)
+	    		
+					if ioctl == -1
+            @log.debug("Error! #{FFI::LastError.error}")
+          end
 
 	  end
 
@@ -78,9 +80,10 @@ module Facter
             interface_count.times do |i|
               pad = i * Facter::Resolvers::Solaris::Lifreq.size
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:buf] + pad)
-	      interface_names[lifreq[:name].to_s] = { fam: lifreq[:lifru][:staddr][:sa_family] }
+							binding.pry
+							interface_names[lifreq[:name].to_s] = { fam: lifreq[:lifru][:addr][:sa_family] }
             end
-	    interface_names
+	    			interface_names
           end
         end
       end
