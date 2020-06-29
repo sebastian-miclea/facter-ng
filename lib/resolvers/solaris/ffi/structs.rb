@@ -2,12 +2,20 @@ module Facter
   module Resolvers
     module Solaris
 
-        class Sockaddr < FFI::Struct
+        class SockaddrStorage < FFI::Struct
+          layout(
+            :sa_family, :sa_family_t,
+            :sa_data, [:char, 14],
+	    :pad, [:char, 240]
+          )
+        end
+
+	class Sockaddr < FFI::Struct
           layout(
             :sa_family, :sa_family_t,
             :sa_data, [:char, 14]
           )
-        end
+	end
 
         class Lifnum < FFI::Struct
                 layout :family, :uint,
@@ -15,26 +23,35 @@ module Facter
                         :count, :int
         end
 
+	class Arpreq < FFI::Struct
+		layout :arp_pa, Sockaddr,
+			:arp_ha, Sockaddr,
+			:arp_flags, :int
+
+	end
+
         class Lifru1 < FFI::Union
-          layout :addrlen, :int
-          # :ppa, :uint
+          layout :addrlen, :int,
+           :ppa, :uint
         end
 
         class Lifru < FFI::Union
           layout :addr, :int,
-          # :staddr, Sockaddr,
-          # :broad_addr, Sockaddr,
+           :staddr, SockaddrStorage,
+           :broad_addr, SockaddrStorage
           # :token, Sockaddr,
           # :index, :int,
           # :flags, :uint64_t,
-            :metric, :int
+          #  :metric, :int
           # :mtu, :uint_t
 
         end
 
         class Lifreq < FFI::Struct
           layout  :name, [:char, 32],
-            :pad, [:char, 344]
+		  :lifru1, Lifru1,
+		  :lifru, Lifru,
+            :pad, [:char, 84]
         end
 
         class Lifconf < FFI::Struct
