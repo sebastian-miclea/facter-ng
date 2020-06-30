@@ -34,7 +34,6 @@ module Facter
 arp = Arpreq.new
 
 arp_addr = SockaddrIn.new(arp[:arp_pa].to_ptr)
-binding.pry
 arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)[:sin_addr][:s_addr]
 
 
@@ -47,6 +46,8 @@ arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].t
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
+
+						res[:mac] = arp[:arp_ha][:sa_data].entries[0,6].map { |s| s.to_s(16).rjust(2, '0') }.join ':' 
           end
 
           def count_interfaces(socket)
