@@ -42,7 +42,12 @@ arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].t
                       Facter::Resolvers::Solaris::SIOCGARP,
                       arp
                     )
-						binding.pry
+						ioctl2 = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
+										socket,
+										Facter::Resolvers::Solaris::SIOCGLIFMTU,
+										lifreq
+						)
+						#mtu lifreq[:lifr_lifru][:lifru_metric]
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
