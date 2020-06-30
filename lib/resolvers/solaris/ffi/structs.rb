@@ -37,6 +37,8 @@ module Facter
                 :lifru_broadaddr, SockaddrStorage,
                 :lifru_token, SockaddrStorage,
                 :lifru_subnet, SockaddrStorage,
+								:lifru_flags, :uint64,
+								:lifru_metric, :int,
 								:pad, [:char, 80]
       end
 
