@@ -18,57 +18,57 @@ module Facter
             )
 
             interfaces = load_interfaces(socket)
-						#x = Socket::close(socket)
-						#p x
-						interfaces.each do |int, fam|
-	    				#macadress = load_macaddress(int, fam)
-	    			end
+            #x = Socket::close(socket)
+            #p x
+            interfaces.each do |int, fam|
+              #macadress = load_macaddress(int, fam)
+            end
             p interfaces
           end
 
-	  def load_macaddress(interface, family)
+          def load_macaddress(interface, family)
             socket = Socket::socket(
-              2,
-	      Facter::Resolvers::Solaris::SOCK_DGRAM,
-              0
-            )
-	        arp = Facter::Resolvers::Solaris::Arpreq.new
+                  2,
+                  Facter::Resolvers::Solaris::SOCK_DGRAM,
+                  0
+                )
 
-					ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
-										7, 
-										Facter::Resolvers::Solaris::SIOCGARP,
-										arp)
-	    		
-					if ioctl == -1
-            @log.debug("Error! #{FFI::LastError.error}")
+            arp = Facter::Resolvers::Solaris::Arpreq.new
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
+                      7,
+                      Facter::Resolvers::Solaris::SIOCGARP,
+                      arp
+                    )
+
+            if ioctl == -1
+              @log.debug("Error! #{FFI::LastError.error}")
+            end
           end
-
-	  end
 
           def count_interfaces(socket)
 
             lifnum = Facter::Resolvers::Solaris::Lifnum.new
-            lifnum[:family] = Facter::Resolvers::Solaris::AF_UNSPEC
-            lifnum[:flags] = 0
-            lifnum[:count] = 0
+            lifnum[:lifn_family] = Facter::Resolvers::Solaris::AF_UNSPEC
+            lifnum[:lifn_flags] = 0
+            lifnum[:lifn_count] = 0
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifnum(socket, Facter::Resolvers::Solaris::SIOCGLIFNUM, lifnum)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
 
-            lifnum[:count]
+            lifnum[:lifn_count]
           end
 
           def load_interfaces(socket)
             interface_count  = count_interfaces(socket)
 
             lifconf = Facter::Resolvers::Solaris::Lifconf.new
-            lifconf[:family] = 0
-            lifconf[:flags] = 0
-            lifconf[:len] = interface_count * 376 # lifreq struct size
+            lifconf[:lifc_family] = 0
+            lifconf[:lifc_flags] = 0
+            lifconf[:lifc_len] = interface_count * 376 # lifreq struct size
 
-            lifconf[:buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::Lifreq, interface_count)
+            lifconf[:lifc_buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::Lifreq, interface_count)
 
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifnum(socket, Facter::Resolvers::Solaris::SIOCGLIFCONF, lifconf)
 
@@ -80,10 +80,10 @@ module Facter
             interface_count.times do |i|
               pad = i * Facter::Resolvers::Solaris::Lifreq.size
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:buf] + pad)
-							binding.pry
-							interface_names[lifreq[:name].to_s] = { fam: lifreq[:lifru][:addr][:sa_family] }
+              binding.pry
+              interface_names[lifreq[:lifr_name].to_s] = { fam: lifreq[:lifr_lifru][:addr][:sa_family] }
             end
-	    			interface_names
+            interface_names
           end
         end
       end

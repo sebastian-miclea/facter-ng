@@ -40,22 +40,22 @@ module Facter
       end
 
       class Lifreq < FFI::Struct
-        layout  :name, [:char, 32],
-                :lifru1, Lifru1,
-                :lifru, Lifru,
+        layout  :lifr_name, [:char, 32],
+                :lifr_lifru1, Lifru1,
+                :lifr_lifru, Lifru,
                 :pad, [:char, 96]
       end
 
       class Lifconf < FFI::Struct
-        layout  :family, :uint,
-                :flags, :int,
-                :len, :int,
-                :buf, :pointer
+        layout  :lifc_family, :uint,
+                :lifc_flags, :int,
+                :lifc_len, :int,
+                :lifc_buf, :pointer
       end
 
       class Lifcu < FFI::Union
         layout  :lifcu_buf, :caddr_t,
-                :lifreq, Lifreq
+                :lifcu_req, Lifreq
       end
     end
   end
