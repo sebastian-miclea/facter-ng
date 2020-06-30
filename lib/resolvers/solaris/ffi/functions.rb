@@ -5,7 +5,7 @@ module Facter
           extend FFI::Library
           ffi_lib '/usr/lib/libsocket.so'
           attach_function :socket, [:int, :int, :int], :int
-				#	attach_function :close, [:int], :int
+					attach_function :close, [:int], :int
         end
 
         module Ioctl

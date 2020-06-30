@@ -3,8 +3,8 @@ module Facter
     module Solaris
 
       class SockaddrStorage < FFI::Struct
-        layout  :ss_family, :uint16,
-                :pad, [:char, 240]
+        layout  :ss_family, :int16,
+                :pad, [:char, 254]
       end
 
       class Sockaddr < FFI::Struct
@@ -36,14 +36,16 @@ module Facter
                 :lifru_dstaddr, SockaddrStorage,
                 :lifru_broadaddr, SockaddrStorage,
                 :lifru_token, SockaddrStorage,
-                :lifru_subnet, SockaddrStorage
+                :lifru_subnet, SockaddrStorage,
+								:pad, [:char, 80]
       end
 
       class Lifreq < FFI::Struct
         layout  :lifr_name, [:char, 32],
                 :lifr_lifru1, Lifru1,
+								:lifr_movetoindex, :int,
                 :lifr_lifru, Lifru,
-                :pad, [:char, 96]
+                :pad, [:char, 80]
       end
 
       class Lifconf < FFI::Struct
@@ -57,6 +59,17 @@ module Facter
         layout  :lifcu_buf, :caddr_t,
                 :lifcu_req, Lifreq
       end
+
+			class InAddr < FFI::Struct
+				layout :s_addr, :uint32_t
+			end
+
+			class SockaddrIn < FFI::Struct 
+				layout 	:sin_family, :sa_family_t,
+								:sin_port, :in_port_t,
+								:sin_addr, InAddr,
+								:sin_zero, [:char, 8]
+			end
     end
   end
 end
