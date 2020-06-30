@@ -9,7 +9,7 @@ module Facter
 
       class Sockaddr < FFI::Struct
         layout  :sa_family, :sa_family_t,
-                :sa_data, [:char, 14]
+                :sa_data, [:uchar, 14]
 
       end
 
