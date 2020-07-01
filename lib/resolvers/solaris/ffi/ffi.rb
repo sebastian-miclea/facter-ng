@@ -13,8 +13,11 @@ module Facter
       SIOCGLIFNETMASK = -1065850499
       SIOCGARP        = -1071355617
       AF_INET         = 2
+			AF_INET6				= 26
       AF_UNSPEC       = 0
       SOCK_DGRAM      = 1
+			INET_ADDRSTRLEN = 16
+			INET6_ADDRSTRLEN= 46
     end
   end
 end
