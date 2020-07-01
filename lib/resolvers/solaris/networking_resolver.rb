@@ -47,7 +47,20 @@ arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].t
 										Facter::Resolvers::Solaris::SIOCGLIFMTU,
 										lifreq
 						)
-						#mtu lifreq[:lifr_lifru][:lifru_metric]
+
+						ioctl3 = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
+                    socket,
+                    Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
+                    lifreq
+                    )
+sockaddr = Sockaddr.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)
+sockaddr_in = SockaddrIn.new(sockaddr.to_ptr)
+ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
+
+buffer = FFI::MemoryPointer.new(:char, Facter::Resolvers::Solaris::INET_ADDRSTRLEN)
+inet_ntop = Facter::Resolvers::Solaris::Socket::inet_ntop(Facter::Resolvers::Solaris::AF_INET,ip.to_ptr,buffer.to_ptr,buffer.size)
+p inet_ntop
+p lifreq[:lifr_lifru][:lifru_metric]
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
