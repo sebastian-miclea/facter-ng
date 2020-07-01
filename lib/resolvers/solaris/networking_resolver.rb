@@ -11,61 +11,96 @@ module Facter
           private
 
           def post_resolve(fact_name)
-            socket = Socket::socket(
-              Facter::Resolvers::Solaris::AF_INET,
-              Facter::Resolvers::Solaris::SOCK_DGRAM,
-              0
-            )
+            socket = create_socket(Facter::Resolvers::Solaris::AF_INET)
 
             interfaces = load_interfaces(socket)
             Socket::close(socket)
-            interfaces.each do |int, fam|
-              macadress = load_macaddress(int, fam)
+
+            interfaces.each do |interface|
+              socket = create_socket(lifreq[:lifr_lifru][:lifru_addr][:ss_family])
+              @fact_list[interface[:lifr_name]] = {
+                mac: load_mac(socket, lifreq),
+                mtu: load_mtu(socket, lifreq),
+                bindings: {
+                  netmask: load_netmask(socket, lifreq)
+                }
+              }
+              Socket::close(socket)
             end
-            p interfaces
+
+
           end
 
-          def load_macaddress(lifreq, res)
-						socket = Socket::socket(
-                  res[:fam],
-                  Facter::Resolvers::Solaris::SOCK_DGRAM,
-                  0
-                )
-arp = Arpreq.new
+          def create_socket(family)
+            Socket::socket(
+              family,
+              Facter::Resolvers::Solaris::SOCK_DGRAM,
+              0
+            )
+          end
 
-arp_addr = SockaddrIn.new(arp[:arp_pa].to_ptr)
-arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)[:sin_addr][:s_addr]
 
+          def load_mac(socket, lifreq)
+            arp = Arpreq.new
+            arp_addr = SockaddrIn.new(arp[:arp_pa].to_ptr)
+            arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)[:sin_addr][:s_addr]
 
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
                       socket,
                       Facter::Resolvers::Solaris::SIOCGARP,
                       arp
                     )
-						ioctl2 = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
-										socket,
-										Facter::Resolvers::Solaris::SIOCGLIFMTU,
-										lifreq
-						)
-
-						ioctl3 = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
-                    socket,
-                    Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
-                    lifreq
-                    )
-sockaddr = Sockaddr.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)
-sockaddr_in = SockaddrIn.new(sockaddr.to_ptr)
-ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
-
-buffer = FFI::MemoryPointer.new(:char, Facter::Resolvers::Solaris::INET_ADDRSTRLEN)
-inet_ntop = Facter::Resolvers::Solaris::Socket::inet_ntop(Facter::Resolvers::Solaris::AF_INET,ip.to_ptr,buffer.to_ptr,buffer.size)
-p inet_ntop
-p lifreq[:lifr_lifru][:lifru_metric]
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
 
-						res[:mac] = arp[:arp_ha][:sa_data].entries[0,6].map { |s| s.to_s(16).rjust(2, '0') }.join ':' 
+            arp[:arp_ha][:sa_data].entries[0,6].map { |s| s.to_s(16).rjust(2, '0') }.join ':'
+          end
+
+          def load_mtu(socket, lifreq)
+            socket = Socket::socket(
+              res[:fam],
+              Facter::Resolvers::Solaris::SOCK_DGRAM,
+              0
+            )
+
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
+              socket,
+              Facter::Resolvers::Solaris::SIOCGLIFMTU,
+              lifreq
+            )
+
+            if ioctl == -1
+              @log.debug("Error! #{FFI::LastError.error}")
+            end
+
+            lifreq[:lifr_lifru][:lifru_metric]
+          end
+
+          def load_netmask(socket, lifreq)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
+                    socket,
+                    Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
+                    lifreq
+                    )
+
+            sockaddr = Sockaddr.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)
+            sockaddr_in = SockaddrIn.new(sockaddr.to_ptr)
+            ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
+
+            buffer = FFI::MemoryPointer.new(:char, Facter::Resolvers::Solaris::INET_ADDRSTRLEN)
+            inet_ntop = Facter::Resolvers::Solaris::Socket::inet_ntop(
+              Facter::Resolvers::Solaris::AF_INET,
+              ip.to_ptr,
+              buffer.to_ptr,
+              buffer.size
+            )
+
+            if ioctl == -1
+              @log.debug("Error! #{FFI::LastError.error}")
+            end
+
+            inet_ntop
           end
 
           def count_interfaces(socket)
@@ -89,7 +124,7 @@ p lifreq[:lifr_lifru][:lifru_metric]
             lifconf = Facter::Resolvers::Solaris::Lifconf.new
             lifconf[:lifc_family] = 0
             lifconf[:lifc_flags] = 0
-            lifconf[:lifc_len] = interface_count * 376 # lifreq struct size
+            lifconf[:lifc_len] = interface_count * Facter::Resolvers::Solaris::Lifreq.size # 376 lifreq struct size
 
             lifconf[:lifc_buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::Lifreq, interface_count)
 
@@ -99,13 +134,14 @@ p lifreq[:lifr_lifru][:lifru_metric]
               @log.debug("Error! #{FFI::LastError.error}")
             end
 
-            interface_names = {}
+            interfaces = []
             interface_count.times do |i|
               pad = i * Facter::Resolvers::Solaris::Lifreq.size
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:lifc_buf] + pad)
-							interface_names[lifreq] = {name: lifreq[:lifr_name].to_s, fam: lifreq[:lifr_lifru][:lifru_addr][:ss_family] }
+              interfaces < lifreq
+              # {name: lifreq[:lifr_name].to_s, fam: lifreq[:lifr_lifru][:lifru_addr][:ss_family] }
             end
-            interface_names
+            interfaces
           end
         end
       end
