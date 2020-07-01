@@ -11,24 +11,29 @@ module Facter
           private
 
           def post_resolve(fact_name)
+            @fact_list.fetch(fact_name) { read_facts(fact_name) }
+          end
+
+          def read_facts(fact_name)
             socket = create_socket(Facter::Resolvers::Solaris::AF_INET)
 
             interfaces = load_interfaces(socket)
             Socket::close(socket)
-
+						hash = {}
             interfaces.each do |interface|
-              socket = create_socket(lifreq[:lifr_lifru][:lifru_addr][:ss_family])
-              @fact_list[interface[:lifr_name]] = {
-                mac: load_mac(socket, lifreq),
-                mtu: load_mtu(socket, lifreq),
+              socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
+							hash[interface[:lifr_name].to_s] = {
+                mac: load_mac(socket, interface),
+                mtu: load_mtu(socket, interface),
                 bindings: {
-                  netmask: load_netmask(socket, lifreq)
+                  netmask: load_netmask(socket, interface)
                 }
               }
               Socket::close(socket)
+
             end
-
-
+						@fact_list[:interfaces] = hash
+						@fact_list[fact_name]
           end
 
           def create_socket(family)
@@ -58,12 +63,6 @@ module Facter
           end
 
           def load_mtu(socket, lifreq)
-            socket = Socket::socket(
-              res[:fam],
-              Facter::Resolvers::Solaris::SOCK_DGRAM,
-              0
-            )
-
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
               socket,
               Facter::Resolvers::Solaris::SIOCGLIFMTU,
@@ -138,7 +137,7 @@ module Facter
             interface_count.times do |i|
               pad = i * Facter::Resolvers::Solaris::Lifreq.size
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:lifc_buf] + pad)
-              interfaces < lifreq
+              interfaces << lifreq
               # {name: lifreq[:lifr_name].to_s, fam: lifreq[:lifr_lifru][:lifru_addr][:ss_family] }
             end
             interfaces
