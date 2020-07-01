@@ -48,6 +48,10 @@ module Facter
 								:lifr_movetoindex, :int,
                 :lifr_lifru, Lifru,
                 :pad, [:char, 80]
+
+				def name
+					self[:lifr_name].to_s
+        end
       end
 
       class Lifconf < FFI::Struct

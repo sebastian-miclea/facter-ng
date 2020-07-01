@@ -1,4 +1,5 @@
 require_relative 'ffi/ffi.rb'
+require 'ipaddr'
 require 'pry'
 module Facter
   module Resolvers
@@ -22,12 +23,14 @@ module Facter
             hash = {}
             interfaces.each do |interface|
               socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
+							#netmask = load_netmask(socket, interface)
+							#Socket::close(socket)
+							#ipaddr = IPAddr.new(netmask)
+							#mask_length = ipaddr.to_i.to_s(2).count('1')
+							#socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
               hash[interface[:lifr_name].to_s] = {
                 mac: load_mac(socket, interface),
-                mtu: load_mtu(socket, interface),
-                bindings: {
-                  netmask: load_netmask(socket, interface)
-                }
+                mtu: load_mtu(socket, interface)
               }
               Socket::close(socket)
 
@@ -58,7 +61,6 @@ module Facter
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
-
             arp[:arp_ha][:sa_data].entries[0,6].map { |s| s.to_s(16).rjust(2, '0') }.join ':'
           end
 
@@ -72,8 +74,8 @@ module Facter
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
-
-            lifreq[:lifr_lifru][:lifru_metric]
+          
+						lifreq[:lifr_lifru][:lifru_metric]
           end
 
           def load_netmask(socket, lifreq)
@@ -88,14 +90,14 @@ module Facter
             ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
 
             buffer = FFI::MemoryPointer.new(:char, Facter::Resolvers::Solaris::INET_ADDRSTRLEN)
-            inet_ntop = Facter::Resolvers::Solaris::Socket::inet_ntop(
+						inet_ntop = Facter::Resolvers::Solaris::Socket::inet_ntop(
               Facter::Resolvers::Solaris::AF_INET,
               ip.to_ptr,
               buffer.to_ptr,
               buffer.size
             )
-
-            if ioctl == -1
+            
+						if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
 
