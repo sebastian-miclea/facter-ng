@@ -29,7 +29,6 @@ module Facter
               ipaddr = IPAddr.new(netmask)
               mask_length = ipaddr.to_i.to_s(2).count('1')
               bindings = ::Resolvers::Utils::Networking.build_binding(ip, mask_length)
-
 							#netmask = load_netmask(socket, interface)
 							#Socket::close(socket)
 							#ipaddr = IPAddr.new(netmask)
@@ -43,7 +42,7 @@ module Facter
               Socket::close(socket)
 
             end
-            @fact_list[:interfaces] = hash
+            @fact_list[:interfaces] = network_interfaces
             @fact_list[fact_name]
           end
 
@@ -87,7 +86,7 @@ module Facter
           end
 
           def load_netmask(socket, lifreq)
-            netmask_lifreq = Lifreq.new(lifreq)
+									netmask_lifreq = Lifreq.new(lifreq.to_ptr)
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
                     socket,
                     Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
