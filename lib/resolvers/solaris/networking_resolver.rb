@@ -20,24 +20,24 @@ module Facter
 
             interfaces = load_interfaces(socket)
             Socket::close(socket)
-            hash = {}
+            network_interfaces = {}
             interfaces.each do |interface|
               socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
+              mac = load_mac(socket, interface)
               ip = inet_ntop(interface)
               netmask = load_netmask(socket, interface)
-              bindings = {
-                address: ip,
-                netmask: netmask
-              }
+              ipaddr = IPAddr.new(netmask)
+              mask_length = ipaddr.to_i.to_s(2).count('1')
+              bindings = ::Resolvers::Utils::Networking.build_binding(ip, mask_length)
 
 							#netmask = load_netmask(socket, interface)
 							#Socket::close(socket)
 							#ipaddr = IPAddr.new(netmask)
 							#mask_length = ipaddr.to_i.to_s(2).count('1')
 							#socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
-              hash[interface[:lifr_name].to_s] = {
+              network_interfaces[interface[:lifr_name].to_s] = {
                 bindings: bindings,
-                mac: load_mac(socket, interface),
+                mac: mac,
                 mtu: load_mtu(socket, interface)
               }
               Socket::close(socket)
