@@ -75,7 +75,7 @@ module Facter
               @log.debug("Error! #{FFI::LastError.error}")
             else
               netmask = inet_ntop(netmask_lifreq)
-              netmask, calculate_mask_length(netmask)
+              return netmask, calculate_mask_length(netmask)
             end
           end
 
