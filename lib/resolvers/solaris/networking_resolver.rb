@@ -57,7 +57,7 @@ module Facter
             arp_addr = SockaddrIn.new(arp[:arp_pa].to_ptr)
             arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)[:sin_addr][:s_addr]
 
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_arpreq(
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(
                       socket,
                       Facter::Resolvers::Solaris::SIOCGARP,
                       arp
@@ -69,7 +69,7 @@ module Facter
           end
 
           def load_mtu(socket, lifreq)
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(
               socket,
               Facter::Resolvers::Solaris::SIOCGLIFMTU,
               lifreq
@@ -84,7 +84,7 @@ module Facter
 
           def load_netmask(socket, lifreq)
 									netmask_lifreq = Lifreq.new(lifreq.to_ptr)
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(
                     socket,
                     Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
                     netmask_lifreq
@@ -117,7 +117,7 @@ module Facter
             lifnum[:lifn_family] = Facter::Resolvers::Solaris::AF_UNSPEC
             lifnum[:lifn_flags] = 0
             lifnum[:lifn_count] = 0
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifnum(socket, Facter::Resolvers::Solaris::SIOCGLIFNUM, lifnum)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::SIOCGLIFNUM, lifnum)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
@@ -136,7 +136,7 @@ module Facter
 
             lifconf[:lifc_buf] = FFI::MemoryPointer.new(Facter::Resolvers::Solaris::Lifreq, interface_count)
 
-            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifnum(socket, Facter::Resolvers::Solaris::SIOCGLIFCONF, lifconf)
+            ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(socket, Facter::Resolvers::Solaris::SIOCGLIFCONF, lifconf)
 
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
