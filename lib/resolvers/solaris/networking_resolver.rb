@@ -16,30 +16,29 @@ module Facter
           end
 
           def read_facts(fact_name)
+            interfaces = {}
             socket = create_socket(Facter::Resolvers::Solaris::AF_INET)
-
-            interfaces = load_interfaces(socket)
+            lifreqs = load_interfaces(socket)
             Socket::close(socket)
-            network_interfaces = {}
-            interfaces.each do |interface|
-              socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
-              mac = load_mac(socket, interface)
-              ip = inet_ntop(interface)
-              netmask = load_netmask(socket, interface)
-              ipaddr = IPAddr.new(netmask)
-              mask_length = ipaddr.to_i.to_s(2).count('1')
 
+            lifreqs.each do |lifreq|
+              socket = create_socket(lifreq[:lifr_lifru][:lifru_addr][:ss_family])
+
+              mac = load_mac(socket, lifreq)
+              ip = inet_ntop(lifreq)
+              netmask = load_netmask(socket, lifreq)
+              mask_length = calculate_mask_length(netmask)
               bindings = ::Resolvers::Utils::Networking.build_binding(ip, mask_length)
 
-              network_interfaces[interface[:lifr_name].to_s] = {
+              interfaces[lifreq.name] = {
                 bindings: bindings,
                 mac: mac,
-                mtu: load_mtu(socket, interface)
+                mtu: load_mtu(socket, lifreq)
               }
               Socket::close(socket)
 
             end
-            @fact_list[:interfaces] = network_interfaces
+            @fact_list[:interfaces] = interfaces
             @fact_list[fact_name]
           end
 
@@ -65,6 +64,7 @@ module Facter
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
+
             arp[:arp_ha][:sa_data].entries[0,6].map { |s| s.to_s(16).rjust(2, '0') }.join ':'
           end
 
@@ -147,9 +147,14 @@ module Facter
               pad = i * Facter::Resolvers::Solaris::Lifreq.size
               lifreq = Facter::Resolvers::Solaris::Lifreq.new(lifconf[:lifc_buf] + pad)
               interfaces << lifreq
-              # {name: lifreq[:lifr_name].to_s, fam: lifreq[:lifr_lifru][:lifru_addr][:ss_family] }
             end
+
             interfaces
+          end
+
+          def calculate_mask_length(netmask)
+            ipaddr = IPAddr.new(netmask)
+            ipaddr.to_i.to_s(2).count('1')
           end
         end
       end
