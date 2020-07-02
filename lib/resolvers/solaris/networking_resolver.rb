@@ -28,12 +28,9 @@ module Facter
               netmask = load_netmask(socket, interface)
               ipaddr = IPAddr.new(netmask)
               mask_length = ipaddr.to_i.to_s(2).count('1')
+
               bindings = ::Resolvers::Utils::Networking.build_binding(ip, mask_length)
-							#netmask = load_netmask(socket, interface)
-							#Socket::close(socket)
-							#ipaddr = IPAddr.new(netmask)
-							#mask_length = ipaddr.to_i.to_s(2).count('1')
-							#socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
+
               network_interfaces[interface[:lifr_name].to_s] = {
                 bindings: bindings,
                 mac: mac,
