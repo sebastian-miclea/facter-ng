@@ -23,12 +23,20 @@ module Facter
             hash = {}
             interfaces.each do |interface|
               socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
+              ip = inet_ntop(interface)
+              netmask = load_netmask(socket, interface)
+              bindings = {
+                address: ip,
+                netmask: netmask
+              }
+
 							#netmask = load_netmask(socket, interface)
 							#Socket::close(socket)
 							#ipaddr = IPAddr.new(netmask)
 							#mask_length = ipaddr.to_i.to_s(2).count('1')
 							#socket = create_socket(interface[:lifr_lifru][:lifru_addr][:ss_family])
               hash[interface[:lifr_name].to_s] = {
+                bindings: bindings,
                 mac: load_mac(socket, interface),
                 mtu: load_mtu(socket, interface)
               }
@@ -74,34 +82,37 @@ module Facter
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             end
-          
+
 						lifreq[:lifr_lifru][:lifru_metric]
           end
 
           def load_netmask(socket, lifreq)
+            netmask_lifreq = Lifreq.new(lifreq)
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl_lifreq(
                     socket,
                     Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
-                    lifreq
+                    netmask_lifreq
                     )
 
+						if ioctl == -1
+              @log.debug("Error! #{FFI::LastError.error}")
+            else
+              inet_ntop(netmask_lifreq)
+            end
+          end
+
+          def inet_ntop(lifreq)
             sockaddr = Sockaddr.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)
             sockaddr_in = SockaddrIn.new(sockaddr.to_ptr)
             ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
 
             buffer = FFI::MemoryPointer.new(:char, Facter::Resolvers::Solaris::INET_ADDRSTRLEN)
-						inet_ntop = Facter::Resolvers::Solaris::Socket::inet_ntop(
+            Facter::Resolvers::Solaris::Socket::inet_ntop(
               Facter::Resolvers::Solaris::AF_INET,
               ip.to_ptr,
               buffer.to_ptr,
               buffer.size
             )
-            
-						if ioctl == -1
-              @log.debug("Error! #{FFI::LastError.error}")
-            end
-
-            inet_ntop
           end
 
           def count_interfaces(socket)
