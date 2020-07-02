@@ -37,20 +37,20 @@ module Facter
                 :lifru_broadaddr, SockaddrStorage,
                 :lifru_token, SockaddrStorage,
                 :lifru_subnet, SockaddrStorage,
-								:lifru_flags, :uint64,
-								:lifru_metric, :int,
-								:pad, [:char, 80]
+                :lifru_flags, :uint64,
+                :lifru_metric, :int,
+                :pad, [:char, 80]
       end
 
       class Lifreq < FFI::Struct
         layout  :lifr_name, [:char, 32],
                 :lifr_lifru1, Lifru1,
-								:lifr_movetoindex, :int,
+                :lifr_movetoindex, :int,
                 :lifr_lifru, Lifru,
                 :pad, [:char, 80]
 
-				def name
-					self[:lifr_name].to_s
+        def name
+          self[:lifr_name].to_s
         end
       end
 
@@ -66,16 +66,16 @@ module Facter
                 :lifcu_req, Lifreq
       end
 
-			class InAddr < FFI::Struct
-				layout :s_addr, :uint32_t
-			end
+      class InAddr < FFI::Struct
+        layout :s_addr, :uint32_t
+      end
 
-			class SockaddrIn < FFI::Struct 
-				layout 	:sin_family, :sa_family_t,
-								:sin_port, :in_port_t,
-								:sin_addr, InAddr,
-								:sin_zero, [:char, 8]
-			end
+      class SockaddrIn < FFI::Struct
+        layout  :sin_family, :sa_family_t,
+                :sin_port, :in_port_t,
+                :sin_addr, InAddr,
+                :sin_zero, [:char, 8]
+      end
     end
   end
 end
