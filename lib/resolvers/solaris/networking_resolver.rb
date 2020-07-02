@@ -79,18 +79,18 @@ module Facter
               @log.debug("Error! #{FFI::LastError.error}")
             end
 
-						lifreq[:lifr_lifru][:lifru_metric]
+            lifreq[:lifr_lifru][:lifru_metric]
           end
 
           def load_netmask(socket, lifreq)
-									netmask_lifreq = Lifreq.new(lifreq.to_ptr)
+                  netmask_lifreq = Lifreq.new(lifreq.to_ptr)
             ioctl = Facter::Resolvers::Solaris::Ioctl::ioctl(
                     socket,
                     Facter::Resolvers::Solaris::SIOCGLIFNETMASK,
                     netmask_lifreq
                     )
 
-						if ioctl == -1
+            if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             else
               inet_ntop(netmask_lifreq)
