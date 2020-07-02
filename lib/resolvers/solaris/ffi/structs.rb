@@ -1,7 +1,8 @@
+# frozen_string_literal: true
+
 module Facter
   module Resolvers
     module Solaris
-
       class SockaddrStorage < FFI::Struct
         layout  :ss_family, :int16,
                 :pad, [:char, 254]
@@ -10,7 +11,6 @@ module Facter
       class Sockaddr < FFI::Struct
         layout  :sa_family, :sa_family_t,
                 :sa_data, [:uchar, 14]
-
       end
 
       class Lifnum < FFI::Struct
@@ -23,7 +23,6 @@ module Facter
         layout  :arp_pa, Sockaddr,
                 :arp_ha, Sockaddr,
                 :arp_flags, :int
-
       end
 
       class Lifru1 < FFI::Union
