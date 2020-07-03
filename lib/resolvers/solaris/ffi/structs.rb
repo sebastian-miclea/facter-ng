@@ -53,7 +53,7 @@ module Facter
         end
 
         def ss_family
-          lifreq[:lifr_lifru][:lifru_addr][:ss_family]
+          self[:lifr_lifru][:lifru_addr][:ss_family]
         end
       end
 
