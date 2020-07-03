@@ -17,7 +17,7 @@ module Facter
       AF_UNSPEC         = 0
       SOCK_DGRAM        = 1
       INET_ADDRSTRLEN   = 16
-      INET6_ADDRSTRLEN  = 461
+      INET6_ADDRSTRLEN  = 46
     end
   end
 end

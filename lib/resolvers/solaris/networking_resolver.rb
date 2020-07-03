@@ -25,21 +25,21 @@ module Facter
 
             lifreqs.each do |lifreq|
               socket = create_socket(lifreq.ss_family)
-	      interfaces[lifreq.name] ||= {}
-	      #interfaces[lifreq.name][:mac] = load_mac(socket, lifreq)
-	      
-	      ip = inet_ntop(lifreq, lifreq.ss_family)
+              interfaces[lifreq.name] ||= {}
+              interfaces[lifreq.name][:mac] = load_mac(socket, lifreq)
+
+              ip = inet_ntop(lifreq, lifreq.ss_family)
               _netmask, netmask_length = load_netmask(socket, lifreq)
-	      binding.pry
-	      bindings = ::Resolvers::Utils::Networking.build_binding(ip, netmask_length)
 
-              bindings_key = 'bindings'
-              bindings_key = 'bindings6' if lifreq.ss_family == AF_INET6
+              bindings = ::Resolvers::Utils::Networking.build_binding(ip, netmask_length)
 
-	      interfaces[lifreq.name][bindings_key] ||= []
-	      interfaces[lifreq.name][bindings_key] << bindings
-	      interfaces[lifreq.name][:mtu] = load_mtu(socket, lifreq)
-	      Socket.close(socket)
+                    bindings_key = 'bindings'
+                    bindings_key = 'bindings6' if lifreq.ss_family == AF_INET6
+
+              interfaces[lifreq.name][bindings_key] ||= []
+              interfaces[lifreq.name][bindings_key] << bindings
+              interfaces[lifreq.name][:mtu] = load_mtu(socket, lifreq)
+              Socket.close(socket)
             end
 
             @fact_list[:interfaces] = interfaces
@@ -78,7 +78,7 @@ module Facter
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             else
-		    netmask = inet_ntop(netmask_lifreq, lifreq.ss_family)
+            netmask = inet_ntop(netmask_lifreq, lifreq.ss_family)
               [netmask, calculate_mask_length(netmask)]
             end
           end
@@ -87,9 +87,10 @@ module Facter
             sockaddr = Sockaddr.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)
             sockaddr_in = SockaddrIn.new(sockaddr.to_ptr)
             ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
+            buffer_size = INET_ADDRSTRLEN
+            buffer_size = INET6_ADDRSTRLEN if ss_family == AF_INET6
+            buffer = FFI::MemoryPointer.new(:char, buffer_size)
 
-            buffer = FFI::MemoryPointer.new(:char, ss_family)
-	    binding.pry
             Socket.inet_ntop(ss_family, ip.to_ptr, buffer.to_ptr, buffer.size)
           end
 
@@ -137,5 +138,5 @@ module Facter
         end
       end
     end
-  end 
+  end
 end
