@@ -51,6 +51,10 @@ module Facter
         def name
           self[:lifr_name].to_s
         end
+
+        def ss_family
+          lifreq[:lifr_lifru][:lifru_addr][:ss_family]
+        end
       end
 
       class Lifconf < FFI::Struct

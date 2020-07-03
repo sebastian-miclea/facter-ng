@@ -24,18 +24,25 @@ module Facter
             Socket.close(socket)
 
             lifreqs.each do |lifreq|
-              socket = create_socket(lifreq[:lifr_lifru][:lifru_addr][:ss_family])
+              socket = create_socket(lifreq.ss_family)
 
               mac = load_mac(socket, lifreq)
-              ip = inet_ntop(lifreq)
-              _netmask, netmask_length = load_netmask(socket, lifreq)
-              bindings = ::Resolvers::Utils::Networking.build_binding(ip, netmask_length)
 
               interfaces[lifreq.name] = {
-                bindings: bindings,
                 mac: mac,
                 mtu: load_mtu(socket, lifreq)
               }
+
+              ip = inet_ntop(lifreq)
+              _netmask, netmask_length = load_netmask(socket, lifreq)
+
+              bindings = ::Resolvers::Utils::Networking.build_binding(ip, netmask_length)
+
+              bindings_key = 'bindings'
+              bindings_key = 'bindings6' if lifreq.ss_family == AF_INET6
+
+              interfaces[lifreq][bindings_key] ||= []
+              interfaces[lifreq][bindings_key] << bindings
               Socket.close(socket)
             end
 
@@ -69,6 +76,8 @@ module Facter
 
           def load_netmask(socket, lifreq)
             netmask_lifreq = Lifreq.new(lifreq.to_ptr)
+            if lifreq.ss_family == AF_INET6
+
             ioctl = Ioctl.ioctl(socket, SIOCGLIFNETMASK, netmask_lifreq)
 
             if ioctl == -1
@@ -84,8 +93,8 @@ module Facter
             sockaddr_in = SockaddrIn.new(sockaddr.to_ptr)
             ip = InAddr.new(sockaddr_in[:sin_addr].to_ptr)
 
-            buffer = FFI::MemoryPointer.new(:char, INET_ADDRSTRLEN)
-            Socket.inet_ntop(AF_INET, ip.to_ptr, buffer.to_ptr, buffer.size)
+            buffer = FFI::MemoryPointer.new(:char, lifreq.ss_family)
+            Socket.inet_ntop(lifreq.ss_family, ip.to_ptr, buffer.to_ptr, buffer.size)
           end
 
           def count_interfaces(socket)
