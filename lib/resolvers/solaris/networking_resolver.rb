@@ -10,6 +10,12 @@ module Facter
         @log = Facter::Log.new(self)
         @semaphore = Mutex.new
         @fact_list ||= {}
+
+        BINDINGS_KEY = {
+          AF_INET => 'bindings',
+          AF_INET6 => 'bindings6'
+        }.freeze
+
         class << self
           private
 
@@ -19,25 +25,18 @@ module Facter
 
           def read_facts(fact_name)
             interfaces = {}
-            socket = create_socket(AF_INET)
-            lifreqs = load_interfaces(socket)
-            Socket.close(socket)
+            lifreqs = load_interfaces
 
             lifreqs.each do |lifreq|
               socket = create_socket(lifreq.ss_family)
+
               interfaces[lifreq.name] ||= {}
               interfaces[lifreq.name][:mac] = load_mac(socket, lifreq)
 
-              ip = inet_ntop(lifreq, lifreq.ss_family)
-              _netmask, netmask_length = load_netmask(socket, lifreq)
+              bindings_key, bindings = add_bindings(socket, lifreq)
 
-              bindings = ::Resolvers::Utils::Networking.build_binding(ip, netmask_length)
+              interfaces[lifreq.name].merge(bindings_key => bindings)
 
-                    bindings_key = 'bindings'
-                    bindings_key = 'bindings6' if lifreq.ss_family == AF_INET6
-
-              interfaces[lifreq.name][bindings_key] ||= []
-              interfaces[lifreq.name][bindings_key] << bindings
               interfaces[lifreq.name][:mtu] = load_mtu(socket, lifreq)
               Socket.close(socket)
             end
@@ -46,20 +45,21 @@ module Facter
             @fact_list[fact_name]
           end
 
-          def create_socket(family)
-            Socket.socket(family, SOCK_DGRAM, 0)
+          def create_socket(address_family)
+            Socket.socket(address_family, SOCK_DGRAM, 0)
           end
 
           def load_mac(socket, lifreq)
             arp = Arpreq.new
             arp_addr = SockaddrIn.new(arp[:arp_pa].to_ptr)
-            arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq[:lifr_lifru][:lifru_addr].to_ptr)[:sin_addr][:s_addr]
+            arp_addr[:sin_addr][:s_addr] = SockaddrIn.new(lifreq.lifru_addr.to_ptr).s_addr
 
             ioctl = Ioctl.ioctl(socket, SIOCGARP, arp)
 
             @log.debug("Error! #{FFI::LastError.error}") if ioctl == -1
 
-            arp[:arp_ha][:sa_data].entries[0, 6].map { |s| s.to_s(16).rjust(2, '0') }.join ':'
+            mac = arp.sa_data_to_mac
+            mac if mac.count('0') < 12
           end
 
           def load_mtu(socket, lifreq)
@@ -78,7 +78,7 @@ module Facter
             if ioctl == -1
               @log.debug("Error! #{FFI::LastError.error}")
             else
-            netmask = inet_ntop(netmask_lifreq, lifreq.ss_family)
+              netmask = inet_ntop(netmask_lifreq, lifreq.ss_family)
               [netmask, calculate_mask_length(netmask)]
             end
           end
@@ -107,14 +107,15 @@ module Facter
             lifnum[:lifn_count]
           end
 
-          def load_interfaces(socket)
+          def load_interfaces
+            socket = create_socket(AF_INET)
+
             interface_count = count_interfaces(socket)
 
             lifconf = Lifconf.new
             lifconf[:lifc_family] = 0
             lifconf[:lifc_flags] = 0
-            lifconf[:lifc_len] = interface_count * Lifreq.size # 376 lifreq struct size
-
+            lifconf[:lifc_len] = interface_count * Lifreq.size
             lifconf[:lifc_buf] = FFI::MemoryPointer.new(Lifreq, interface_count)
 
             ioctl = Ioctl.ioctl(socket, SIOCGLIFCONF, lifconf)
@@ -123,18 +124,30 @@ module Facter
 
             interfaces = []
             interface_count.times do |i|
-              pad = i * Lifreq.size
-              lifreq = Lifreq.new(lifconf[:lifc_buf] + pad)
-              interfaces << lifreq
+              interfaces << Lifreq.new(lifconf[:lifc_buf] + (i * Lifreq.size))
             end
 
+            Socket.close(socket)
             interfaces
+          end
+
+          def add_bindings(socket, lifreq)
+            ip = inet_ntop(lifreq, lifreq.ss_family)
+            _netmask, netmask_length = load_netmask(socket, lifreq)
+
+            bindings = ::Resolvers::Utils::Networking.build_binding(ip, netmask_length)
+
+            bindings_key = BINDINGS_KEY[lifreq.ss_family]
+
+            [bindings_key, bindings]
           end
 
           def calculate_mask_length(netmask)
             ipaddr = IPAddr.new(netmask)
             ipaddr.to_i.to_s(2).count('1')
           end
+
+          def with_socket(&block); end
         end
       end
     end

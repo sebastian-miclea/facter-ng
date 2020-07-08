@@ -23,6 +23,12 @@ module Facter
         layout  :arp_pa, Sockaddr,
                 :arp_ha, Sockaddr,
                 :arp_flags, :int
+
+        def sa_data_to_mac
+          self[:arp_ha][:sa_data].entries[0, 6].map do |s|
+            s.to_s(16).rjust(2, '0')
+          end.join ':'
+        end
       end
 
       class Lifru1 < FFI::Union
@@ -55,6 +61,10 @@ module Facter
         def ss_family
           self[:lifr_lifru][:lifru_addr][:ss_family]
         end
+
+        def lifru_addr
+          self[:lifr_lifru][:lifru_addr]
+        end
       end
 
       class Lifconf < FFI::Struct
@@ -78,6 +88,10 @@ module Facter
                 :sin_port, :in_port_t,
                 :sin_addr, InAddr,
                 :sin_zero, [:char, 8]
+
+        def s_addr
+          self[:sin_addr][:s_addr]
+        end
       end
     end
   end
